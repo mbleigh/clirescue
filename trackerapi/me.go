@@ -28,7 +28,13 @@ func Me() {
 func makeRequest() []byte {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", URL, nil)
-	req.SetBasicAuth(currentUser.Username, currentUser.Password)
+  
+  if currentUser.APIToken != "" {
+    req.Header.Add("X-TrackerToken", currentUser.APIToken)
+  } else {
+	  req.SetBasicAuth(currentUser.Username, currentUser.Password)
+  }
+  
 	resp, err := client.Do(req)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -49,14 +55,20 @@ func parse(body []byte) {
 }
 
 func setCredentials() {
-	fmt.Fprint(Stdout, "Username: ")
-	var username = cmdutil.ReadLine()
-	cmdutil.Silence()
-	fmt.Fprint(Stdout, "Password: ")
-
-	var password = cmdutil.ReadLine()
-	currentUser.Login(username, password)
-	cmdutil.Unsilence()
+  token, err := ioutil.ReadFile(FileLocation)
+  
+  if err != nil {
+    fmt.Fprint(Stdout, "Username: ")
+    var username = cmdutil.ReadLine()
+    cmdutil.Silence()
+    fmt.Fprint(Stdout, "Password: ")
+  
+    var password = cmdutil.ReadLine()
+    currentUser.Login(username, password)
+	  cmdutil.Unsilence()
+  } else {
+    currentUser.APIToken = string(token)
+  }
 }
 
 func homeDir() string {
